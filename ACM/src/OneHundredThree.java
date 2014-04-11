@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +19,25 @@ public class OneHundredThree {
 
     class Box {
 
+        boolean sorted = false;
         int number;
-        int[] dimensions;
+        List<Integer> dimensions;
+        List<Box> fitable = new ArrayList<Box>();
 
         public Box(int number, int[] dimensions) {
             this.number = number;
-            this.dimensions = dimensions;
+            for (int i = 0; i != dimensions.length; i++) {
+                this.dimensions.add(dimensions[i]);
+            }
+        }
+
+        public boolean canFit(Box b) {
+
+        }
+
+        public void sortDimensions() {
+            Collections.sort(this.dimensions);
+            this.sorted = true;
         }
     }
 
