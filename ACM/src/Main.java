@@ -1,121 +1,179 @@
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 public class Main {
 
-    public class OneHundredTwo {
+    public class OneHundredThree {
 
-        int[][] input;
+        class Box {
 
-        public OneHundredTwo(Scanner in) {
+            private boolean sorted = false;
+            private int number;
+            List<Integer> dimensions = new ArrayList<Integer>();
+            private List<Box> fitable = new ArrayList<Box>();
 
+            public Box(int number, int[] dimensions) {
+                this.number = number;
+                for (int i = 0; i != dimensions.length; i++) {
+                    this.dimensions.add(dimensions[i]);
+                }
+            }
+
+            public boolean canFitBox(Box b) {
+                if (!this.sorted) {
+                    this.sortDimensions();
+                }
+                if (!b.isSorted()) {
+                    b.sortDimensions();
+                }
+                for (int i = 0; i != this.dimensions.size(); i++) {
+                    if (b.dimensions.get(i) >= this.dimensions.get(i)) {
+                        return false;
+                    }
+                }
+                //System.out.println(this + " can fit " + b);
+                return true;
+            }
+
+            public boolean canFitInto(Box b) {
+                return b.canFitBox(this);
+            }
+
+            public boolean isSorted() {
+                return this.sorted;
+            }
+
+            public void sortDimensions() {
+                Collections.sort(this.dimensions);
+                this.sorted = true;
+            }
+
+            public String toString() {
+                String fits = "";
+                for (Box b : this.fitable) {
+                    fits += b.number + " ";
+                }
+                return "#" + this.number + "&dim=" + this.dimensions + "&fits=" + fits;
+            }
+        }
+
+        Map<Box, Integer> nest;
+        List<Box> boxes;
+
+        public OneHundredThree() {
+
+        }
+
+        private void reset() {
+            this.nest = new HashMap<>();
+            this.boxes = new ArrayList<>();
+        }
+
+        public void run(Scanner in) {
             while (in.hasNextInt()) {
-                input = new int[3][3];
-                int min = Integer.MAX_VALUE;
-                List<Integer> solutions = new ArrayList<Integer>();
-                for (int i = 0; i != 3; i++) {
-                    for (int ii = 0; ii != 3; ii++) {
-                        input[i][ii] = in.nextInt();
-                        //System.out.println(stores[i][ii]);
+                this.reset();
+                int numBoxes = in.nextInt();
+                int numDim = in.nextInt();
+                for (int boxNum = 0; boxNum != numBoxes; boxNum++) {
+                    int[] dim = new int[numDim];
+                    for (int i = 0; i != numDim; i++) {
+                        dim[i] = in.nextInt();
                     }
+                    boxes.add(new Box(boxNum, dim));
                 }
-                final int numB = input[0][0] + input[1][0] + input[2][0];
-                final int numG = input[0][1] + input[1][1] + input[2][1];
-                final int numC = input[0][2] + input[1][2] + input[2][2];
-
-                //System.out.println(numG + " " + numB + " " + numC);
-                for (int i = 0; i != 3; i++) {
-                    int aAmt = numB - input[i][0];
-                    for (int ii = 0; ii != 3; ii++) {
-                        if (i == ii) {
-                            continue;
-                        }
-                        int bAmt = numG - input[ii][1];
-                        //System.out.println("numB=" + numB + " stores[1][" + ii + "]=" + stores[1][ii]);
-                        for (int iii = 0; iii != 3; iii++) {
-                            if (iii == ii || iii == i) {
-                                continue;
-                            }
-                            //System.out.println(i + " " + ii + " " + iii);
-                            int cAmt = numC - input[iii][2];
-                            int sum = aAmt + bAmt + cAmt;
-                            //System.out.println(aAmt + "+" + bAmt + "+" + cAmt + "=" + sum);
-                            //System.out.println(sum);
-                            solutions.add(sum);
-                            if (sum < min) {
-                                min = sum;
-                            }
-                        }
-                    }
+                //        System.out.println(boxes);
+                Box solution = this.solveOne();
+                //    System.out.print("Solution: ");
+                System.out.println(this.nest.get(solution));
+                List<Box> path = recreateNest(solution);
+                for (int i = 0; i != path.size(); i++) {
+                    System.out.print((path.get(i).number + 1) + " ");
                 }
-                int temp = solutions.get(4);
-                solutions.set(4, solutions.get(3));
-                solutions.set(3, temp);
-                System.out.println(greedyAlphabetical(solutions, min) + " " + min);
-                /*                for (int i = 0; i != 3; i++) {
-                 System.out.print(toLetter(i, binB, binG, binC));
-                 }
-                 System.out.println(" " + min);
-                 System.out.println(solutions);*/
-            }
-        }
-
-        private String greedyAlphabetical(List<Integer> solutions, int min) {
-            int[] sorted = {1, 0, 4, 5, 2, 3};
-            //System.out.println(solutions);
-            for (int i = 0; i != sorted.length; i++) {
-                if (solutions.get(sorted[i]) == min) {
-                    //System.out.println("sorted" + i + "=" + sorted[i]);
-                    return toLetters(sorted[i]);
+                if (in.hasNextInt()) {
+                    System.out.println();
                 }
             }
-            return "INVALID" + min;
         }
 
-        private String toLetters(int i) {
-            switch (i) {
-                case 0:
-                    return "BGC";
-                case 1:
-                    return "BCG";
-                case 2:
-                    return "GBC";
-                case 3:
-                    return "GCB";
-                case 4:
-                    return "CBG";
-                case 5:
-                    return "CGB";
+        private Box solveOne() {
+            for (Box box : this.boxes) {
+                this.calculateBoxNest(box);
+//            System.out.println(box);
             }
-            return "INVALID " + i;
+            //System.out.println(this.boxes);
+            //      System.out.println(this.nest);
+            return this.findMax(this.nest);
         }
 
-        private String toLetter(int index, int binB, int binG, int binC) {
-            if (binG == index) {
-                return "G";
-            } else if (binB == index) {
-                return "B";
-            } else {
-                return "C";
+        private void calculateBoxNest(Box box) {
+            if (this.nest.containsKey(box)) {
+                return;
             }
-
+            for (Box b : this.boxes) {
+                if (b.canFitInto(box)) {
+                    box.fitable.add(b);
+                }
+            }
+            if (box.fitable.isEmpty()) {
+                this.nest.put(box, 1);
+                return;
+            }
+            for (Box b : box.fitable) {
+                //          System.out.println(b.number);
+                if (!this.nest.containsKey(b)) {
+                    this.calculateBoxNest(b);
+                }
+            }
+            Box b = findMaxNestNumber(box.fitable);
+            this.nest.put(box, nest.get(b) + 1);
         }
 
-        private String toLetter(int a) {
-            switch (a) {
-                case 0:
-                    return "B";
-                case 1:
-                    return "G";
-                case 2:
-                    return "C";
+        private Box findMaxNestNumber(List<Box> boxes) {
+            int max = Integer.MIN_VALUE;
+            Box solution = null;
+            for (Box b : boxes) {
+                if (this.nest.get(b) > max) {
+                    max = this.nest.get(b);
+                    solution = b;
+                }
             }
-            return "INVALID";
+            return solution;
+        }
+
+        private Box findMax(Map<Box, Integer> nests) {
+            int max = Integer.MIN_VALUE;
+            Box boxMax = null;
+            for (Box b : nests.keySet()) {
+                if (nests.get(b) > max) {
+                    max = nests.get(b);
+                    boxMax = b;
+                }
+            }
+            return boxMax;
+        }
+
+        public List<Box> recreateNest(Box b) {
+            List<Box> path = new ArrayList<>();
+            path.add(b);
+            Box curr = b;
+            while (true) {
+                if (curr.fitable.isEmpty()) {
+                    break;
+                }
+                curr = this.findMaxNestNumber(curr.fitable);
+                path.add(curr);
+            }
+            Collections.reverse(path);
+            return path;
         }
     }
 
     public Main() {
-        OneHundredTwo a = new OneHundredTwo(new Scanner(System.in));
+        OneHundredThree a = new OneHundredThree();
+        a.run(new Scanner(System.in));
+        //    OneHundredTwo a = new OneHundredTwo(new Scanner(System.in));
 //    OneHundredOne a = new OneHundredOne();
         //   a.run(new Scanner(System.in));
 //        OneHundred a = new OneHundred();
